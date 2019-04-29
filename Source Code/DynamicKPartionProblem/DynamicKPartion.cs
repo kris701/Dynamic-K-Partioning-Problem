@@ -1,27 +1,164 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 class DynamicKPartion
 {
-    // Public Section
+    public struct OptimalGroup
+    {
+        public List<List<int>> TheOptimalGroup;
+        public List<int> SplitIndex;
+        public int TotalCost;
+        public int ProcessTime_Ticks;
+        public int ProcessTime_Ms;
 
-    public static int GetBestValueOf(int[] Values, int k)
-    {
-        return TotalCost(ReconstructPartition(Values, Partition(Values, k), k));
-    }
-    public static int GetBestValueOf(List<List<int>> List)
-    {
-        return TotalCost(List);
-    }
-
-    public static List<List<int>> GetOptimalGrouping(int[] Values, int k)
-    {
-        return ReconstructPartition(Values, Partition(Values, k), k);
+        public OptimalGroup(List<List<int>> _TheOptimalGroup, List<int> _SplitIndex, int _TotalCost, int _ProcessTime_Ticks, int _ProcessTime_Ms)
+        {
+            TheOptimalGroup = _TheOptimalGroup;
+            SplitIndex = _SplitIndex;
+            TotalCost = _TotalCost;
+            ProcessTime_Ticks = _ProcessTime_Ticks;
+            ProcessTime_Ms = _ProcessTime_Ms;
+        }
     }
 
-    public static void PrintOptimalGrouping(List<List<int>> Group)
+    public static OptimalGroup GetOptimalGrouping(int[] Values, int k)
     {
-        foreach (List<int> InnerList in Group)
+        var Watch = new System.Diagnostics.Stopwatch();
+
+        Watch.Start();
+
+        List<List<int>> NewList = new List<List<int>>();
+        int[] Masked = Mask(Values, k);
+        int Index = 0;
+        for (int i = 0; i < k; i++)
+        {
+            List<int> InnerList = new List<int>();
+            for (int j = 0; j < Masked[i]; j++)
+            {
+                InnerList.Add(Values[Index]);
+                Index++;
+            }
+            NewList.Add(InnerList);
+        }
+
+        Watch.Stop();
+
+        return new OptimalGroup(NewList, Masked.ToList<int>(), TotalGroupCost(NewList, Values.Length), (int)Watch.ElapsedTicks, (int)Watch.ElapsedMilliseconds);
+    }
+
+    private static int[] Mask(int[] Values, int k)
+    {
+        double min_cost = 99999999.0, cost = 0.0;
+        int[] group = FirstGroup(k, Values.Length);
+        int[] best_group = new int[k];
+        double[,] SaveVale = new double[Values.Length, Values.Length];
+        for (int i = 0; i < SaveVale.GetLength(0); i++)
+            for (int j = 0; j < SaveVale.GetLength(1); j++)
+                SaveVale[i,j] = int.MaxValue;
+
+        while (group != null)
+        {
+            cost = Cost(Values, group, SaveVale);
+            if (cost < min_cost)
+            {
+                min_cost = cost;
+                group.CopyTo(best_group, 0);
+            }
+            group = NextGroup(group, Values.Length, group.Length - 2);
+        }
+
+        return best_group;
+    }
+
+    public static int[] FirstGroup(int k, int n)
+    {
+        int[] group = new int[k];
+        for (int i = 0; i < k - 1; i++)
+        {
+            group[i] = 1;
+        }
+        group[k - 1] = n - k + 1;
+        return group;
+    }
+
+    public static int[] NextGroup(int[] group, int n, int cursor)
+    {
+        if (group[cursor] + InitalSum(group, cursor) + group.Length - cursor <= n)
+        {
+            int[] new_group = new int[group.Length];
+            group.CopyTo(new_group,0);
+            new_group[cursor]++;
+            for (int i = cursor + 1; i < group.Length - 1; i++)
+            {
+                new_group[i] = 1;
+            }
+            new_group[group.Length - 1] = n - InitalSum(new_group, group.Length - 1);
+            return new_group;
+        }
+        else if (cursor > 0)
+        {
+            return NextGroup(group, n, cursor - 1);
+        }
+        else return null;
+    }
+
+    public static int InitalSum(int[] group, int cursor)
+    {
+        int sum = 0;
+        for (int j = 0; j < cursor; j++)
+        {
+            sum += group[j];
+        }
+        return sum;
+
+    }
+
+    public static double GroupCost(int[] A, int firstelement, int nbelements, double[,] SaveVal)
+    {
+        if (SaveVal[firstelement, nbelements] == int.MaxValue)
+        {
+            double cost = int.MaxValue;
+            double avg = 0, sum = 0.0;
+            for (int i = 0; i < nbelements; i++)
+            {
+                if (firstelement + i < A.Length)
+                {
+                    sum += A[firstelement + i];
+                }
+            }
+            avg = sum / nbelements;
+
+            cost = 0;
+            for (int i = 0; i < nbelements; i++)
+            {
+                if (firstelement + i < A.Length)
+                {
+                    cost += Math.Pow(A[i + firstelement] - avg, 2);
+                }
+            }
+            SaveVal[firstelement, nbelements] = cost;
+        }
+
+        return SaveVal[firstelement, nbelements];
+    }
+
+    public static double Cost(int[] A, int[] group, double[,] SaveVal)
+    {
+        double cost = 0.0;
+        int firstelement = 0;
+        for (int i = 0; i < group.Length; i++)
+        {
+            cost += GroupCost(A, firstelement, group[i], SaveVal);
+            firstelement += group[i];
+        }
+        return cost;
+    }
+
+    public static void PrintOptimalGrouping(OptimalGroup Group)
+    {
+        Console.Write("Best Group: ");
+        foreach (List<int> InnerList in Group.TheOptimalGroup)
         {
             Console.Write(" [ ");
             foreach (int InnerInnerList in InnerList)
@@ -30,120 +167,33 @@ class DynamicKPartion
             }
             Console.Write(" ] ");
         }
-        Console.WriteLine(" Cost: " + TotalCost(Group));
+
+        Console.WriteLine("");
+
+        Console.Write("Index:      ");
+        foreach (int SplitIndex in Group.SplitIndex)
+        {
+            Console.Write(" [ " + SplitIndex + " ]");
+        }
+        Console.WriteLine("");
+
+        Console.WriteLine("Cost: " + Group.TotalCost + " Elapsed time (ms): " + Group.ProcessTime_Ms + " Elapsed time (ticks): " + Group.ProcessTime_Ticks);
+
+        Console.WriteLine("");
     }
 
-    // Private Section
-
-    private static int[,] Partition(int[] Values, int k)
+    private static int TotalGroupCost(List<List<int>> Group, int n)
     {
-        // Initializes the initial map arrays:
-        int n = Values.Length;
-        int[,] M = new int[n, k];
-        int[,] D = new int[n - 1, k - 1];
-
-        // Puts in the base values in the map array
-        M[0, 0] = Values[0];
-        for (int i = 1; i < n; i++)
+        double Result = 0;
+        foreach (List<int> InnerList in Group)
         {
-            M[i, 0] = Values[i] + M[i - 1, 0];
+            double[,] SaveVale = new double[n, n];
+            for (int i = 0; i < SaveVale.GetLength(0); i++)
+                for (int j = 0; j < SaveVale.GetLength(1); j++)
+                    SaveVale[i, j] = int.MaxValue;
+
+            Result += GroupCost(InnerList.ToArray(), 0, InnerList.Count, SaveVale);
         }
-        for (int i = 1; i < k; i++)
-        {
-            M[0, i] = Values[0];
-        }
-
-        // Run throught every number compared to a group:
-        for (int i = 1; i < n; i++)
-        {
-            for (int j = 1; j < k; j++)
-            {
-                /// Resets currentmin and minimumx
-                int CurrentMin = -1;
-                int MinimumX = int.MaxValue;
-
-                // Run through every number that are under the current i index
-                for (int x = 0; x < i; x++)
-                {
-                    // Get the maximum value of this set:
-                    int s = Math.Max(M[x, j - 1], M[i, 0] - M[x, 0]);
-
-                    // if s is less than the last currentmin, then save the s and x as the new currentmin and minimumx
-                    if (CurrentMin < 0 || s < CurrentMin)
-                    {
-                        CurrentMin = s;
-                        MinimumX = x;
-                    }
-                }
-
-                // Save the current min and minimumx in the M and D arrays
-                M[i, j] = CurrentMin;
-                D[i - 1, j - 1] = MinimumX;
-            }
-        }
-
-        // Returns the new partion mask
-        return D;
-    }
-
-    private static List<List<int>> ReconstructPartition(int[] Values, int[,] D, int k)
-    {
-        List<List<int>> Result = new List<List<int>>();
-        int n = D.GetLength(0);
-        k = k - 2;
-
-        // Runs through the input values, from top to bottom, until k >= 0.
-        while (k >= 0)
-        {
-            List<int> Inner1 = new List<int>();
-            for (int i = D[n - 1, k] + 1; i < n + 1; i++)
-            {
-                Inner1.Add(Values[i]);
-            }
-            Result.Add(Inner1);
-            n = D[n - 1, k];
-            k--;
-        }
-
-        // When k < 0 then it must be the remaining group thats lest
-        List<int> Inner2 = new List<int>();
-        for (int i = 0; i < n + 1; i++)
-        {
-            Inner2.Add(Values[i]);
-        }
-        Result.Add(Inner2);
-
-        // Revert the list, since its currently showing the largest one as the first
-        Result.Reverse();
-        return Result;
-    }
-
-    private static int TotalCost(List<List<int>> InputList)
-    {
-        // Quickly calculate the cost of a list
-
-        int TotalCost = 0;
-
-        double IndividualCost = 0;
-        double IndividualAvr = 0;
-        for (int i = 0; i < InputList.Count; i++)
-        {
-            IndividualAvr = 0;
-            IndividualCost = 0;
-            for (int j = 0; j < InputList[i].Count; j++)
-            {
-                IndividualAvr += InputList[i][j];
-            }
-            IndividualAvr = IndividualAvr / InputList[i].Count;
-
-            for (int j = 0; j < InputList[i].Count; j++)
-            {
-                IndividualCost += Math.Pow(InputList[i][j] - IndividualAvr, 2);
-            }
-
-            TotalCost += (int)IndividualCost;
-        }
-
-        return TotalCost;
+        return (int)Result;
     }
 }

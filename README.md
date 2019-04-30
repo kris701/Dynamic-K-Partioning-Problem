@@ -11,4 +11,42 @@ Where the program can display the best group, as well as the cost of the group:
 
 Where the program rounds up, so that it only returns intergers as a cost.
 
-Main source: http://www8.cs.umu.se/kurser/TDBA77/VT06/algorithms/BOOK/BOOK2/NODE45.HTM
+## How it works
+
+Run through all combinations, and comparing costs in a dynamic manner. That means that an example input of [4, 5, 7, 11, 21] in k = 3, we have the possible sets of:
+
+1         : [ 4, ] [ 5, ] [ 7, 11, 21, ]
+2         : [ 4, ] [ 5, 7, ] [ 11, 21, ]
+3         : [ 4, ] [ 5, 7, 11, ] [ 21, ]
+4         : [ 4, 5, ] [ 7, ] [ 11, 21, ]
+5         : [ 4, 5, ] [ 7, 11, ] [ 21, ]
+6         : [ 4, 5, 7, ] [ 11, ] [ 21, ]
+
+Since the total cost is cost(G1) + cost(G2) + cost(G3), we can see an obvious optimization possibility. Consider the groups:
+
+4         : [ 4, 5, ] [ 7, ] [ 11, 21, ]
+5         : [ 4, 5, ] [ 7, 11, ] [ 21, ]
+
+The first group [ 4, 5 ], if it is purely recursive, would be calculated twice, but since there are no change to the first group, then we would only need to calculate it once.
+
+If we only calculate the groups once, then the total calculations would be:
+
+1         : [ 4, ] [ 5, ] [ 7, 11, 21, ] = [ 4, = 0 ] [ 5, = 0 ] [ 7, 11, 21, = 104 ] <- first group, nothing is precalculated
+2         : [ 4, ] [ 5, 7, ] [ 11, 21, ] = [ 0, ] [ 5, 7, = 2 ] [ 11, 21, = 50 ] <- here we have the first group that have already been calculated [ 4 ], wich gives the cost of 0
+3         : [ 4, ] [ 5, 7, 11, ] [ 21, ] = [ 0, ] [ 5, 7, 11, = 18.66 ] [ 21, = 0 ]
+4         : [ 4, 5, ] [ 7, ] [ 11, 21, ] = [ 4, 5, = 0.5 ] [ 7, = 0 ] [ 50 ] <- here we have two groups thta have been precalculated, the first and last group
+5         : [ 4, 5, ] [ 7, 11, ] [ 21, ] = [ 0.5 ] [ 7, 11, = 8 ] [ 21, = 0 ]
+6         : [ 4, 5, 7, ] [ 11, ] [ 21, ] = [ 4, 5, 7, = 4.66 ] [ 0 ] [ 0 ] 
+
+Where we can see the total costs of each group:
+
+1         : [ 0 ] [ 0 ] [ 104 ]    = 104
+2         : [ 0 ] [ 2 ] [ 50 ]     = 52
+3         : [ 0 ] [ 18.66 ] [ 0 ]  = 18
+4         : [ 0.5 ] [ 0 ] [ 50 ]   = 50
+5         : [ 0.5 ] [ 8] [ 0 ]     = 8
+6         : [ 4.66 ] [ 0 ] [0 ]    = 4
+
+Where the last group is the best group.
+With the dynamic caching, there is a total of 12 calculations being done, as opposed to without caching, that would have used 18 calculations.
+Thats a big improvement, and the improvement gets even greater the larger the input group.

@@ -111,20 +111,17 @@ class DynamicKPartion
         // Check if the group can be split even more:
         if (group[cursor] + InitalSum(group, cursor) + group.Length - cursor <= n)
         {
-            int[] new_group = new int[group.Length];
-            group.CopyTo(new_group,0);
-            new_group[cursor]++;
-
+            group[cursor]++;
             // Move indexes into the new_group from the current cursor position to the end of the group
             // fx. the split [1] [3] [1] would give the group [2] [1] [2]
             for (int i = cursor + 1; i < group.Length - 1; i++)
             {
-                new_group[i] = 1;
+                group[i] = 1;
             }
-            new_group[group.Length - 1] = n - InitalSum(new_group, group.Length - 1);
+            group[group.Length - 1] = n - InitalSum(group, group.Length - 1);
 
             // Return the new_group:
-            return new_group;
+            return group;
         }
         else if (cursor > 0)
         {

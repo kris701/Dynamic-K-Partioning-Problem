@@ -7,7 +7,7 @@ goes like this:
 
 Where the program can display the best group, as well as the cost of the group:
 
-![Error Loading Image](https://amodpg.db.files.1drv.com/y4mRMEKgTiIQBN-m84BaVtI7Kwtzu7p9UcWrvP9GNrd8lJ0__aG316Ud8bAtTrzNuEgoST7RHrpoTklkDH82D719PLG6lgZ8zLd0pwR--NwzrxW8p5wfICN4aJNTpEvvQqs8TsbdsU4To9OOLwSTiwLZrlwFPkGYRzfBRtwuiE-NbBixbMiqv_Oixn1kmg0u9SHyI76TDORCSkvLaZurmqTqA?width=1050&height=255&cropmode=none)
+![Error Loading Image](https://amodpg.db.files.1drv.com/y4m2LJNzTZ_dAC_gGhWZRa4P0S93yhYnyRqP4vIfu43kjU964t8f0x_Ulyddla6LwwbMODOZXG3KcmJ5k1JQIanknXNFur9ayg2xJtWX4Tnn-9MuMG0OtVuTmTuoqoxby2B3j2qgLdBCCdRL21mWSO1jbf0TFm2iiQGKwJgNsbaPdF4ybWyhv5JrmDXNjJufZs8GbKQY0lW0SArePbkEmHA9w?width=1195&height=413&cropmode=none)
 
 Where the program rounds up, so that it only returns intergers as a cost.
 
